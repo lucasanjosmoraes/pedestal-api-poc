@@ -142,3 +142,5 @@ Temporary Items
 .apdisk
 
 # End of https://www.toptal.com/developers/gitignore/api/intellij+all,clojure,leiningen,macos
+
+logs/
