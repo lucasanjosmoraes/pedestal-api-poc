@@ -2,7 +2,42 @@
   (:require [clojure.data.json :as json]
             [io.pedestal.http :as http]
             ;[io.pedestal.http.body-params :as body-params]
-            [io.pedestal.http.content-negotiation :as con-neg]))
+            [io.pedestal.http.content-negotiation :as con-neg]
+            [io.pedestal.http.route :as route]))
+
+(defonce database (atom {}))
+
+;; Helpers
+
+(defn response [status body & {:as headers}]
+  {:status status :body body :headers headers})
+
+(def ok       (partial response 200))
+(def created  (partial response 201))
+
+;; Domain
+
+(defn make-list [nm]
+  {:name  nm
+   :items {}})
+
+(defn make-list-item [nm]
+  {:name  nm
+   :done? false})
+
+;; Repository
+
+(defn find-list-by-id [dbval db-id]
+  (get dbval db-id))
+
+(defn find-list-item-by-ids [dbval list-id item-id]
+  (get-in dbval [list-id :items item-id] nil))
+
+(defn list-item-add
+  [dbval list-id item-id new-item]
+  (if (contains? dbval list-id)
+    (assoc-in dbval [list-id :items item-id] new-item)
+    dbval))
 
 ;; Handlers
 
@@ -43,6 +78,13 @@
       (update :body transform-content content-type)
       (assoc-in [:headers "Content-Type"] content-type)))
 
+(def echo
+  {:name :echo
+   :enter
+         (fn [context]
+           (let [response (ok context)]
+             (assoc context :response response)))})
+
 (def coerce-body
   {:name ::coerce-body
    :leave
@@ -53,10 +95,94 @@
 
 ;(def common-interceptors [(body-params/body-params) http/html-body])
 
+(def db-interceptor
+  {:name ::database-interceptor
+   :enter
+   (fn [context]
+     (update context :request assoc :database @database))
+   :leave
+   (fn [context]
+     (if-let [[op & args] (:tx-data context)]
+       (do
+         (apply swap! database op args)
+         (assoc-in context [:request :database] @database))
+       context))})
+
+(def entity-render
+  {:name :entity-render
+   :leave
+   (fn [context]
+     (if-let [item (:result context)]
+       (assoc context :response (ok item))
+       context))})
+
+
+(def list-create
+  {:name :list-create
+   :enter
+   (fn [context]
+     (let [nm (get-in context [:request :query-params :name] "Unnamed List")
+           new-list (make-list nm)
+           db-id (str (gensym "1"))
+           url (route/url-for :list-view :params {:list-id db-id})]
+       (assoc context
+         ;; http://pedestal.io/guides/your-first-api
+         ;; [...]
+         ;; in general, adding something to the database might cause it to change. Sometimes there are triggers or stored
+         ;; procedures that change it. Other times it's just an ID being assigned. Usually, instead of attaching the new
+         ;; entity here, I would attach its ID to the context and use another interceptor later in the chain to look up
+         ;; the entity after db-interceptor executes the transaction.
+         ;; [...]
+         :response (created new-list "Location" url)
+         :tx-data [assoc db-id new-list])))})
+
+(def list-view
+  {:name :list-view
+   :enter
+   (fn [context]
+     (if-let [db-id (get-in context [:request :path-params :list-id])]
+       (if-let [the-list (find-list-by-id (get-in context [:request :database]) db-id)]
+         (assoc context :result the-list)
+         context)
+       context))})
+
+(def list-item-view
+  {:name :list-item-view
+   :leave
+   (fn [context]
+     ;; TODO: Exercise - this repetitively nesting structure in list-item-view is a perfect candidate for a Clojure macro
+     (if-let [list-id (get-in context [:request :path-params :list-id])]
+       (if-let [item-id (get-in context [:request :path-params :item-id])]
+         (if-let [item (find-list-item-by-ids (get-in context [:request :database]) list-id item-id)]
+           (assoc context :result item)
+           context)
+         context)
+       context))})
+
+(def list-item-create
+  {:name :list-item-create
+   :enter
+   (fn [context]
+     (if-let [list-id (get-in context [:request :path-params :list-id])]
+       (let [nm (get-in context [:request :query-params :name] "Unnamed Item")
+             new-item (make-list-item nm)
+             item-id (str (gensym "i"))]
+         (-> context
+             (assoc :tx-data [list-item-add list-id item-id new-item])
+             (assoc-in [:request :path-params :item-id] item-id)))
+       context))})
+
 ;; Routes
 
 (def routes #{["/hi" :get [coerce-body content-neg-intc respond-hi] :route-name :hi]
-              ["/hello/:name" :get [coerce-body content-neg-intc respond-hello] :route-name :hello]})
+              ["/hello/:name" :get [coerce-body content-neg-intc respond-hello] :route-name :hello]
+              ["/todo"                    :post   [coerce-body content-neg-intc db-interceptor list-create]]
+              ["/todo"                    :get    echo :route-name :list-query-form]
+              ["/todo/:list-id"           :get    [coerce-body content-neg-intc entity-render db-interceptor list-view]]
+              ["/todo/:list-id"           :post   [coerce-body content-neg-intc entity-render list-item-view db-interceptor list-item-create]]
+              ["/todo/:list-id/:item-id"  :get    [coerce-body content-neg-intc entity-render list-item-view db-interceptor]]
+              ["/todo/:list-id/:item-id"  :put    echo :route-name :list-item-update]
+              ["/todo/:list-id/:item-id"  :delete echo :route-name :list-item-delete]})
 
 ;; Service
 
