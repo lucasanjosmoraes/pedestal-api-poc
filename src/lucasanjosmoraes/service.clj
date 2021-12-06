@@ -17,20 +17,39 @@
 
 ;; Domain
 
-(defn make-list [nm]
+(def truthy? #{"true"})
+
+(def falsy? #{"false"})
+
+(defn str-is-boolean
+  [str]
+  (or (truthy? str) (falsy? str)))
+
+(defn make-list
+  [nm]
   {:name  nm
    :items {}})
 
-(defn make-list-item [nm]
+(defn make-list-item
+  [nm]
   {:name  nm
    :done? false})
 
+(defn update-list-item
+  [item done]
+  (let [current-done (:done? item)]
+    (if (= done current-done)
+      item
+      (assoc item :done? done))))
+
 ;; Repository
 
-(defn find-list-by-id [dbval db-id]
+(defn find-list-by-id
+  [dbval db-id]
   (get dbval db-id))
 
-(defn find-list-item-by-ids [dbval list-id item-id]
+(defn find-list-item-by-ids
+  [dbval list-id item-id]
   (get-in dbval [list-id :items item-id] nil))
 
 (defn list-item-add
@@ -172,6 +191,26 @@
              (assoc-in [:request :path-params :item-id] item-id)))
        context))})
 
+(def list-item-update
+  {:name :list-item-update
+   :enter
+   (fn [context]
+     (if-let [list-id (get-in context [:request :path-params :list-id])]
+       (if-let [item-id (get-in context [:request :path-params :item-id])]
+         (if-let [item (find-list-item-by-ids (get-in context [:request :database]) list-id item-id)]
+           (let [done (get-in context [:request :query-params :done] false)]
+             (if (str-is-boolean done)
+               (let [updated-item (update-list-item item (new Boolean done))]
+                 (-> context
+                     (assoc :tx-data [list-item-add list-id item-id updated-item])
+                     (assoc-in [:request :path-params :item-id] item-id)))
+               ;; If we declare list-item-view interceptor with this one, this return will not respond 404, due to the
+               ;; list-item-view behavior
+               context))
+           context)
+         context)
+       context))})
+
 ;; Routes
 
 (def routes #{["/hi" :get [coerce-body content-neg-intc respond-hi] :route-name :hi]
@@ -181,7 +220,7 @@
               ["/todo/:list-id"           :get    [coerce-body content-neg-intc entity-render db-interceptor list-view]]
               ["/todo/:list-id"           :post   [coerce-body content-neg-intc entity-render list-item-view db-interceptor list-item-create]]
               ["/todo/:list-id/:item-id"  :get    [coerce-body content-neg-intc entity-render list-item-view db-interceptor]]
-              ["/todo/:list-id/:item-id"  :put    echo :route-name :list-item-update]
+              ["/todo/:list-id/:item-id"  :put    [coerce-body content-neg-intc entity-render list-item-view db-interceptor list-item-update]]
               ["/todo/:list-id/:item-id"  :delete echo :route-name :list-item-delete]})
 
 ;; Service
