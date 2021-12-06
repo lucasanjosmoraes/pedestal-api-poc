@@ -58,6 +58,12 @@
     (assoc-in dbval [list-id :items item-id] new-item)
     dbval))
 
+(defn delete-item
+  [dbval the-list list-id item-id]
+  (if (contains? (:items the-list) item-id)
+    (update-in dbval [list-id :items] dissoc item-id)
+    dbval))
+
 ;; Handlers
 
 (defn respond-hello
@@ -157,7 +163,7 @@
 
 (def list-view
   {:name :list-view
-   :enter
+   :leave
    (fn [context]
      (if-let [db-id (get-in context [:request :path-params :list-id])]
        (if-let [the-list (find-list-by-id (get-in context [:request :database]) db-id)]
@@ -204,10 +210,23 @@
                  (-> context
                      (assoc :tx-data [list-item-add list-id item-id updated-item])
                      (assoc-in [:request :path-params :item-id] item-id)))
-               ;; If we declare list-item-view interceptor with this one, this return will not respond 404, due to the
-               ;; list-item-view behavior
+               ;; If we use list-item-view interceptor with this one, it will not respond 404 status due to the list-item-view behavior
                context))
            context)
+         context)
+       context))})
+
+(def list-item-delete
+  {:name :list-item-delete
+   :enter
+   (fn [context]
+     (if-let [list-id (get-in context [:request :path-params :list-id])]
+       (if-let [the-list (find-list-by-id (get-in context [:request :database]) list-id)]
+         (if-let [item-id (get-in context [:request :path-params :item-id])]
+           (-> context
+               (assoc :tx-data [delete-item the-list list-id item-id]))
+           context)
+         ;; If we use list-view interceptor with this one, it will not respond 404 status due to the list-view behavior
          context)
        context))})
 
@@ -221,7 +240,7 @@
               ["/todo/:list-id"           :post   [coerce-body content-neg-intc entity-render list-item-view db-interceptor list-item-create]]
               ["/todo/:list-id/:item-id"  :get    [coerce-body content-neg-intc entity-render list-item-view db-interceptor]]
               ["/todo/:list-id/:item-id"  :put    [coerce-body content-neg-intc entity-render list-item-view db-interceptor list-item-update]]
-              ["/todo/:list-id/:item-id"  :delete echo :route-name :list-item-delete]})
+              ["/todo/:list-id/:item-id"  :delete [coerce-body content-neg-intc entity-render list-view db-interceptor list-item-delete]]})
 
 ;; Service
 
