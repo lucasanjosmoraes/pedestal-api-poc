@@ -5,16 +5,27 @@
             [io.pedestal.test :as test]
             [lucasanjosmoraes.service :as service]))
 
+;; For REPL
+
+(declare run-dev)
+
 (defonce custom-server (atom nil))
-
-;; This is an adapted service map, that can be started and stopped
-;; From the REPL you can call server/start and server/stop on this service
-(defonce runnable-service (server/create-server service/service))
-
-;; Helpers
 
 (defn test-request [verb url]
   (test/response-for (::server/service-fn @custom-server) verb url))
+
+(defn start-dev []
+  (reset! custom-server
+          (run-dev)))
+
+(defn stop-dev []
+  (server/stop @custom-server))
+
+(defn restart []
+  (stop-dev)
+  (start-dev))
+
+;; For executables
 
 (defn run-dev
   "The entry-point for 'lein run-dev'"
@@ -36,16 +47,9 @@
       server/create-server
       server/start))
 
-(defn start-dev []
-  (reset! custom-server
-          (run-dev)))
-
-(defn stop-dev []
-  (server/stop @custom-server))
-
-(defn restart []
-  (stop-dev)
-  (start-dev))
+;; This is an adapted service map, that can be started and stopped
+;; From the REPL you can call server/start and server/stop on this service
+(defonce runnable-service (server/create-server service/service))
 
 (defn -main
   "The entry-point for 'lein run'"
