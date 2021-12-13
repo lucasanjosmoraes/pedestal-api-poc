@@ -1,6 +1,6 @@
 (ns lucasanjosmoraes.interceptors.domain
   (:require [io.pedestal.http.route :as route]
-            [lucasanjosmoraes.helpers :as helpers]
+            [lucasanjosmoraes.helpers :as h]
             [lucasanjosmoraes.domain :as domain]
             [lucasanjosmoraes.repository :as repository]))
 
@@ -10,8 +10,8 @@
    (fn [context]
      (if-let [item (:result context)]
        (if-let [headers (:result-headers context)]
-         (assoc context :response (apply (partial helpers/ok item) headers))
-         (assoc context :response (helpers/ok item)))
+         (assoc context :response (apply (partial h/ok item) headers))
+         (assoc context :response (h/ok item)))
        context))})
 
 (def list-create
@@ -32,31 +32,27 @@
          ;; entity here, I would attach its ID to the context and use another interceptor later in the chain to look up
          ;; the entity after db-interceptor executes the transaction.
          ;; [...]
-         :response (helpers/created new-list "Location" url)
+         :response (h/created new-list "Location" url)
          :tx-data [assoc db-id new-list])))})
 
 (def list-view
   {:name :list-view
    :leave
    (fn [context]
-     (if-let [db-id (get-in context [:request :path-params :list-id])]
-       (if-let [the-list (repository/find-list-by-id (get-in context [:request :database]) db-id)]
-         (assoc context :result the-list)
-         context)
-       context))})
+     (h/if-let* [db-id (get-in context [:request :path-params :list-id])
+                 the-list (repository/find-list-by-id (get-in context [:request :database]) db-id)]
+                (assoc context :result the-list)
+                context))})
 
 (def list-item-view
   {:name :list-item-view
    :leave
    (fn [context]
-     ;; TODO: Exercise - this repetitively nesting structure in list-item-view is a perfect candidate for a Clojure macro
-     (if-let [list-id (get-in context [:request :path-params :list-id])]
-       (if-let [item-id (get-in context [:request :path-params :item-id])]
-         (if-let [item (repository/find-list-item-by-ids (get-in context [:request :database]) list-id item-id)]
-           (assoc context :result item)
-           context)
-         context)
-       context))})
+     (h/if-let* [list-id (get-in context [:request :path-params :list-id])
+                 item-id (get-in context [:request :path-params :item-id])
+                 item (repository/find-list-item-by-ids (get-in context [:request :database]) list-id item-id)]
+                (assoc context :result item)
+                context))})
 
 (def list-item-create
   {:name :list-item-create
@@ -78,30 +74,25 @@
   {:name :list-item-update
    :enter
    (fn [context]
-     (if-let [list-id (get-in context [:request :path-params :list-id])]
-       (if-let [item-id (get-in context [:request :path-params :item-id])]
-         (if-let [item (repository/find-list-item-by-ids (get-in context [:request :database]) list-id item-id)]
-           (let [done (get-in context [:request :query-params :done] false)]
-             (if (helpers/str-is-boolean done)
-               (let [updated-item (domain/update-list-item item (new Boolean done))]
-                 (-> context
-                     (assoc :tx-data [repository/list-item-add list-id item-id updated-item])))
-               ;; If we use list-item-view interceptor with this one, it will not respond 404 status due to the list-item-view behavior
-               context))
-           context)
-         context)
-       context))})
+     (h/if-let* [list-id (get-in context [:request :path-params :list-id])
+                 item-id (get-in context [:request :path-params :item-id])
+                 item (repository/find-list-item-by-ids (get-in context [:request :database]) list-id item-id)]
+                (let [done (get-in context [:request :query-params :done] false)]
+                  (if (h/str-is-boolean done)
+                    (let [updated-item (domain/update-list-item item (new Boolean done))]
+                      (assoc context :tx-data [repository/list-item-add list-id item-id updated-item]))
+                    ;; If we use list-item-view interceptor with this one, it will not respond 404 status due to the list-item-view behavior
+                    context))
+                context))})
 
 (def list-item-delete
   {:name :list-item-delete
    :enter
    (fn [context]
-     (if-let [list-id (get-in context [:request :path-params :list-id])]
-       (if-let [the-list (repository/find-list-by-id (get-in context [:request :database]) list-id)]
-         (if-let [item-id (get-in context [:request :path-params :item-id])]
-           (-> context
-               (assoc :tx-data [repository/delete-item the-list list-id item-id]))
-           context)
-         ;; If we use list-view interceptor with this one, it will not respond 404 status due to the list-view behavior
-         context)
-       context))})
+     (h/if-let* [list-id (get-in context [:request :path-params :list-id])
+                 the-list (repository/find-list-by-id (get-in context [:request :database]) list-id)
+                 item-id (get-in context [:request :path-params :item-id])]
+                (assoc context :tx-data [repository/delete-item the-list list-id item-id])
+                ;; If we use list-view interceptor with this one, it will not respond 404 status if the given :list-id exist,
+                ;; due to the list-view behavior
+                context))})
