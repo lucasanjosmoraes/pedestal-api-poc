@@ -11,8 +11,8 @@
 (defn response [status body & {:as headers}]
   {:status status :body body :headers headers})
 
-(def ok       (partial response 200))
-(def created  (partial response 201))
+(def ok (partial response 200))
+(def created (partial response 201))
 
 ;; This implementation doesn't short circuit on falsey forms: https://clojuredocs.org/clojure.core/if-let#example-5b8deb7ce4b00ac801ed9e81
 (defmacro if-let*

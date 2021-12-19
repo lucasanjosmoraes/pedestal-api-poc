@@ -13,7 +13,7 @@
 (defn transform-content
   [body content-type]
   (case content-type
-    "text/plain"       body
+    "text/plain" body
     "application/json" (json/write-str body)))
 
 (defn coerce-to

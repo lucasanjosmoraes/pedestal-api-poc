@@ -1,12 +1,13 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Pedestal API POC - DEV" type="LeiningenRunConfiguration" factoryName="Leiningen" singleton="true">
-    <option name="aliases" />
-    <option name="execution" value="LEININGEN" />
-    <module name="pedestal-api-poc" />
-    <option name="profiles" />
-    <option name="PROGRAM_PARAMETERS" value="run-dev" />
-    <option name="trampoline" value="true" />
-    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-    <method v="2" />
-  </configuration>
+    <configuration default="false" name="Pedestal API POC - DEV" type="LeiningenRunConfiguration"
+                   factoryName="Leiningen" singleton="true">
+        <option name="aliases"/>
+        <option name="execution" value="LEININGEN"/>
+        <module name="pedestal-api-poc"/>
+        <option name="profiles"/>
+        <option name="PROGRAM_PARAMETERS" value="run-dev"/>
+        <option name="trampoline" value="true"/>
+        <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$"/>
+        <method v="2"/>
+    </configuration>
 </component>
