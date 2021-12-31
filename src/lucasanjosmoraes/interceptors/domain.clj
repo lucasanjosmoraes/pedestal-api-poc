@@ -1,18 +1,39 @@
 (ns lucasanjosmoraes.interceptors.domain
-  (:require [io.pedestal.http.route :as route]
+  (:require [clojure.spec.alpha :as s]
+            [io.pedestal.http.route :as route]
             [lucasanjosmoraes.helpers :as h]
             [lucasanjosmoraes.domain :as domain]
             [lucasanjosmoraes.repository :as repository]))
 
+(s/def ::result (s/keys))
+(s/def ::result-headers (s/& (s/* string?) #(even? (count %))))
+(s/def ::context (s/keys :opt-un [::result ::result-headers]))
+
+(s/def ::status pos-int?)
+(s/def ::body any?)
+(s/def ::headers (s/nilable (s/map-of string? string?)))
+(s/def ::response (s/keys :req-un [::status ::body]
+                    :opt-un [::headers]))
+(s/def ::context-with-response (s/merge ::context
+                                 (s/keys :opt-un [::response])))
+
+(defn entity-render-leave
+  [context]
+  {:pre  [(s/valid? ::context context)]
+   :post [(s/valid? ::context-with-response %)]}
+  (if-let [item (:result context)]
+    (if-let [headers (:result-headers context)]
+      (assoc context :response (apply (partial h/ok item) headers))
+      (assoc context :response (h/ok item)))
+    context))
+
+(s/fdef entity-render-leave
+  :args (s/cat :context ::context)
+  :ret ::context-with-response)
+
 (def entity-render
-  {:name :entity-render
-   :leave
-   (fn [context]
-     (if-let [item (:result context)]
-       (if-let [headers (:result-headers context)]
-         (assoc context :response (apply (partial h/ok item) headers))
-         (assoc context :response (h/ok item)))
-       context))})
+  {:name  :entity-render
+   :leave entity-render-leave})
 
 (def list-create
   {:name :list-create
@@ -39,7 +60,7 @@
   {:name :list-view
    :leave
    (fn [context]
-     (h/if-let* [db-id (get-in context [:request :path-params :list-id])
+     (h/if-let* [db-id    (get-in context [:request :path-params :list-id])
                  the-list (repository/find-list-by-id (get-in context [:request :database]) db-id)]
        (assoc context :result the-list)
        context))})
@@ -50,7 +71,7 @@
    (fn [context]
      (h/if-let* [list-id (get-in context [:request :path-params :list-id])
                  item-id (get-in context [:request :path-params :item-id])
-                 item (repository/find-list-item-by-ids (get-in context [:request :database]) list-id item-id)]
+                 item    (repository/find-list-item-by-ids (get-in context [:request :database]) list-id item-id)]
        (assoc context :result item)
        context))})
 
@@ -76,7 +97,7 @@
    (fn [context]
      (h/if-let* [list-id (get-in context [:request :path-params :list-id])
                  item-id (get-in context [:request :path-params :item-id])
-                 item (repository/find-list-item-by-ids (get-in context [:request :database]) list-id item-id)]
+                 item    (repository/find-list-item-by-ids (get-in context [:request :database]) list-id item-id)]
        (let [done (get-in context [:request :query-params :done] false)]
          (if (h/str-is-boolean done)
            (let [updated-item (domain/update-list-item item (new Boolean done))]
@@ -89,9 +110,9 @@
   {:name :list-item-delete
    :enter
    (fn [context]
-     (h/if-let* [list-id (get-in context [:request :path-params :list-id])
+     (h/if-let* [list-id  (get-in context [:request :path-params :list-id])
                  the-list (repository/find-list-by-id (get-in context [:request :database]) list-id)
-                 item-id (get-in context [:request :path-params :item-id])]
+                 item-id  (get-in context [:request :path-params :item-id])]
        (assoc context :tx-data [repository/delete-item the-list list-id item-id])
        ;; If we use list-view interceptor with this one, it will not respond 404 status if the given :list-id exist,
        ;; due to the list-view behavior
