@@ -4,12 +4,13 @@
             [lucasanjosmoraes.interceptors.http :as inc-http]
             [lucasanjosmoraes.interceptors.basic :as inc-basic]
             [lucasanjosmoraes.interceptors.database :as inc-db]
-            [lucasanjosmoraes.interceptors.domain :as inc-domain]))
+            [lucasanjosmoraes.interceptors.domain :as inc-domain]
+            [lucasanjosmoraes.interceptors.error :as inc-error]))
 
 ;; Routes
 
-(def routes #{["/hi" :get [inc-http/coerce-body inc-http/content-negotiator handlers/respond-hi] :route-name :hi]
-              ["/hello/:name" :get [inc-http/coerce-body inc-http/content-negotiator handlers/respond-hello] :route-name :hello]
+(def routes #{["/hi" :get [inc-error/service-error-handler inc-http/coerce-body inc-http/content-negotiator handlers/respond-hi] :route-name :hi]
+              ["/hello/:name" :get [inc-error/service-error-handler inc-http/coerce-body inc-http/content-negotiator handlers/respond-hello] :route-name :hello]
               ["/echo" :get inc-basic/echo :route-name :list-query-form]
               ["/todo" :post [inc-http/coerce-body inc-http/content-negotiator inc-db/in-memory inc-domain/list-create]]
               ["/todo/:list-id" :get [inc-http/coerce-body inc-http/content-negotiator inc-domain/entity-render inc-db/in-memory inc-domain/list-view]]
