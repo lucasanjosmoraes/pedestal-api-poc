@@ -2,7 +2,8 @@
   (:require [clojure.spec.alpha :as s]
             [lucasanjosmoraes.domain :as domain]))
 
-(s/def ::database (s/keys :opt-un [::domain/name ::domain/items]))
+(s/def ::id string?)
+(s/def ::database (s/map-of ::id ::domain/list))
 (s/def ::request (s/keys :opt-un [::database]))
 (s/def ::tx-data (s/cat :fn ifn? :args (s/* any?)))
 (s/def ::context (s/keys :req-un [::request]
