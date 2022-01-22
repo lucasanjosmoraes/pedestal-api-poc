@@ -1,12 +1,24 @@
 (ns lucasanjosmoraes.domain
-  (:require [clojure.spec.alpha :as s]))
+  (:require [clojure.spec.alpha :as s]
+            [lucasanjosmoraes.helpers :as h]))
 
 (s/def ::name string?)
 (s/def ::done? boolean?)
+(s/def ::parseable-to-done h/str-is-boolean?)
 (s/def ::list-item (s/keys :opt-un [::name ::done?]))
 
 (s/def ::items ::list-item)
 (s/def ::list (s/keys :req-un [::name ::items]))
+
+(defn parse-done
+  [done-str]
+  {:pre  [(s/valid? ::parseable-to-done done-str)]
+   :post [(s/valid? ::done? %)]}
+  (new Boolean done-str))
+
+(s/fdef parse-done
+  :args (s/cat :done-str ::parseable-to-done)
+  :ret ::done?)
 
 (defn make-list
   [nm]

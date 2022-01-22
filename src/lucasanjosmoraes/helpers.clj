@@ -4,7 +4,7 @@
 
 (def falsy? #{"false"})
 
-(defn str-is-boolean
+(defn str-is-boolean?
   [str]
   (or (truthy? str) (falsy? str)))
 
