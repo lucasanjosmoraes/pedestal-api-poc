@@ -9,7 +9,8 @@
                  [ch.qos.logback/logback-classic "1.2.10" :exclusions [org.slf4j/slf4j-api]]
                  [org.slf4j/jul-to-slf4j "1.7.36"]
                  [org.slf4j/jcl-over-slf4j "1.7.36"]
-                 [org.slf4j/log4j-over-slf4j "1.7.36"]]
+                 [org.slf4j/log4j-over-slf4j "1.7.36"]
+                 [prismatic/schema "1.2.0"]]
   :resource-paths ["config", "resources"]
   :main ^:skip-aot lucasanjosmoraes.server
   :plugins [[lein-ancient "1.0.0-RC3"]]
