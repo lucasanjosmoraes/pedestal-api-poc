@@ -2,17 +2,37 @@
   (:require [io.pedestal.http.route :as route]
             [lucasanjosmoraes.helpers :as h]
             [lucasanjosmoraes.domain :as domain]
-            [lucasanjosmoraes.repository :as repository]))
+            [lucasanjosmoraes.repository :as repository]
+            [schema.core :as s]))
+
+(def Result-Headers
+  (s/constrained [s/Str]
+    #(even? (count %))))
+
+(def Headers (s/maybe {s/Str s/Str}))
+
+(def Response
+  {:status                   (s/constrained s/Int #(> % 0))
+   :body                     s/Any
+   (s/optional-key :headers) Headers})
+
+(def Context
+  {(s/optional-key :result)         s/Any
+   (s/optional-key :result-headers) Result-Headers
+   (s/optional-key :response)       Response
+   s/Any                            s/Any})
+
+(s/defn ^:always-validate entity-reader-leave :- Context
+  [context :- Context]
+  (if-let [item (:result context)]
+    (if-let [headers (:result-headers context)]
+      (assoc context :response (apply (partial h/ok item) headers))
+      (assoc context :response (h/ok item)))
+    context))
 
 (def entity-render
-  {:name :entity-render
-   :leave
-   (fn [context]
-     (if-let [item (:result context)]
-       (if-let [headers (:result-headers context)]
-         (assoc context :response (apply (partial h/ok item) headers))
-         (assoc context :response (h/ok item)))
-       context))})
+  {:name  :entity-render
+   :leave entity-reader-leave})
 
 (def list-create
   {:name :list-create
@@ -39,7 +59,7 @@
   {:name :list-view
    :leave
    (fn [context]
-     (h/if-let* [db-id (get-in context [:request :path-params :list-id])
+     (h/if-let* [db-id    (get-in context [:request :path-params :list-id])
                  the-list (repository/find-list-by-id (get-in context [:request :database]) db-id)]
        (assoc context :result the-list)
        context))})
@@ -50,7 +70,7 @@
    (fn [context]
      (h/if-let* [list-id (get-in context [:request :path-params :list-id])
                  item-id (get-in context [:request :path-params :item-id])
-                 item (repository/find-list-item-by-ids (get-in context [:request :database]) list-id item-id)]
+                 item    (repository/find-list-item-by-ids (get-in context [:request :database]) list-id item-id)]
        (assoc context :result item)
        context))})
 
@@ -76,7 +96,7 @@
    (fn [context]
      (h/if-let* [list-id (get-in context [:request :path-params :list-id])
                  item-id (get-in context [:request :path-params :item-id])
-                 item (repository/find-list-item-by-ids (get-in context [:request :database]) list-id item-id)]
+                 item    (repository/find-list-item-by-ids (get-in context [:request :database]) list-id item-id)]
        (let [done (get-in context [:request :query-params :done] false)]
          (if (h/str-is-boolean done)
            (let [updated-item (domain/update-list-item item (new Boolean done))]
@@ -89,9 +109,9 @@
   {:name :list-item-delete
    :enter
    (fn [context]
-     (h/if-let* [list-id (get-in context [:request :path-params :list-id])
+     (h/if-let* [list-id  (get-in context [:request :path-params :list-id])
                  the-list (repository/find-list-by-id (get-in context [:request :database]) list-id)
-                 item-id (get-in context [:request :path-params :item-id])]
+                 item-id  (get-in context [:request :path-params :item-id])]
        (assoc context :tx-data [repository/delete-item the-list list-id item-id])
        ;; If we use list-view interceptor with this one, it will not respond 404 status if the given :list-id exist,
        ;; due to the list-view behavior
