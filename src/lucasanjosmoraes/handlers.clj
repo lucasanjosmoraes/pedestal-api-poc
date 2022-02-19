@@ -1,15 +1,26 @@
-(ns lucasanjosmoraes.handlers)
+(ns lucasanjosmoraes.handlers
+  (:require [schema.core :as s]))
 
-(defn respond-hello
-  [request]
-  (println (:accept request))
+(def Entity
+  {(s/optional-key :name) s/Str})
+
+(def Request
+  {(s/optional-key :path-params)  Entity
+   (s/optional-key :query-params) Entity
+   s/Any                          s/Any})
+
+(def Response
+  {:status s/Int
+   :body   s/Str})
+
+(s/defn respond-hello :- Response
+  [request :- Request]
   {:status 200
-   :body   (str "Hello, "
-             (get-in request [:path-params :name])
+   :body   (str "Hello, " '(get-in request [:path-params :name])
              "!")})
 
-(defn respond-hi
-  [request]
+(s/defn respond-hi :- Response
+  [request :- Request]
   {:status 200
    :body   (str "Hi, "
              (get-in request [:query-params :name])
