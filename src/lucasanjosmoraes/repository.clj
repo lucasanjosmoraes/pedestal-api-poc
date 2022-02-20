@@ -6,18 +6,18 @@
 (def NilableListItem (s/maybe domain/TODOListItem))
 (def NilableList (s/maybe domain/TODOList))
 
-(s/defn ^:always-validate find-list-by-id :- NilableList
+(s/defn find-list-by-id :- NilableList
   [dbval :- database/Database
    db-id :- domain/ID]
   (get dbval db-id))
 
-(s/defn ^:always-validate find-list-item-by-ids :- NilableListItem
+(s/defn find-list-item-by-ids :- NilableListItem
   [dbval :- database/Database
    list-id :- domain/ID
    item-id :- domain/ID]
   (get-in dbval [list-id :items item-id] nil))
 
-(s/defn ^:always-validate list-item-add :- database/Database
+(s/defn list-item-add :- database/Database
   [dbval :- database/Database
    list-id :- domain/ID
    item-id :- domain/ID
@@ -26,7 +26,7 @@
     (assoc-in dbval [list-id :items item-id] new-item)
     dbval))
 
-(s/defn ^:always-validate delete-item :- database/Database
+(s/defn delete-item :- database/Database
   [dbval :- database/Database
    the-list :- domain/TODOList
    list-id :- domain/ID

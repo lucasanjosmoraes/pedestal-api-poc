@@ -9,7 +9,7 @@
 
 (def str-parseable-to-bool (s/constrained s/Str str-is-boolean?))
 
-(s/defn ^:always-validate str->bool :- s/Bool
+(s/defn str->bool :- s/Bool
   [str :- str-parseable-to-bool]
   (new Boolean str))
 

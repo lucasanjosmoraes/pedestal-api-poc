@@ -45,7 +45,7 @@
 
 ;; Entity render
 
-(s/defn ^:always-validate entity-reader-leave :- Context
+(s/defn entity-reader-leave :- Context
   [context :- Context]
   (if-let [item (:result context)]
     (if-let [headers (:result-headers context)]
@@ -59,7 +59,7 @@
 
 ;; list-create
 
-(s/defn ^:always-validate list-create-enter :- Context
+(s/defn list-create-enter :- Context
   [context :- Context]
   (let [nm       (get-in context [:request :query-params :name] "Unnamed List")
         new-list (domain/make-list nm)
@@ -84,7 +84,7 @@
 
 ;; list-view
 
-(s/defn ^:always-validate list-view-leave :- Context
+(s/defn list-view-leave :- Context
   [context :- Context]
   (h/if-let* [db-id    (get-in context [:request :path-params :list-id])
               the-list (repository/find-list-by-id (get-in context [:request :database]) db-id)]
@@ -97,7 +97,7 @@
 
 ;; list-item-view
 
-(s/defn ^:always-validate list-item-view-leave :- Context
+(s/defn list-item-view-leave :- Context
   [context :- Context]
   (h/if-let* [list-id (get-in context [:request :path-params :list-id])
               item-id (get-in context [:request :path-params :item-id])
@@ -111,7 +111,7 @@
 
 ;; list-item-create
 
-(s/defn ^:always-validate list-item-create-enter :- Context
+(s/defn list-item-create-enter :- Context
   [context :- Context]
   (if-let [list-id (get-in context [:request :path-params :list-id])]
     (let [nm       (get-in context [:request :query-params :name] "Unnamed Item")
@@ -131,7 +131,7 @@
 
 ;; list-item-update
 
-(s/defn ^:always-validate list-item-update-enter :- Context
+(s/defn list-item-update-enter :- Context
   [context :- Context]
   (h/if-let* [list-id      (get-in context [:request :path-params :list-id])
               item-id      (get-in context [:request :path-params :item-id])
@@ -147,7 +147,7 @@
 
 ;; list-item-delete
 
-(s/defn ^:always-validate list-item-delete-enter :- Context
+(s/defn list-item-delete-enter :- Context
   [context :- Context]
   (h/if-let* [list-id  (get-in context [:request :path-params :list-id])
               the-list (repository/find-list-by-id (get-in context [:request :database]) list-id)

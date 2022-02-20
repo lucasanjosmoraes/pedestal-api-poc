@@ -18,11 +18,11 @@
    (s/optional-key :tx-data) Tx-Data
    s/Any                     s/Any})
 
-(s/defn ^:always-validate in-memory-enter :- Context
+(s/defn in-memory-enter :- Context
   [context :- Context]
   (update context :request assoc :database @database))
 
-(s/defn ^:always-validate in-memory-leave :- Context
+(s/defn in-memory-leave :- Context
   [context :- Context]
   (if-let [[op & args] (:tx-data context)]
     (do

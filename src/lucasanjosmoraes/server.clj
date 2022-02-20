@@ -3,7 +3,8 @@
   (:require [io.pedestal.http :as server]
             [io.pedestal.http.route :as route]
             [io.pedestal.test :as test]
-            [lucasanjosmoraes.service :as service]))
+            [lucasanjosmoraes.service :as service]
+            [schema.core :as s]))
 
 ;; For REPL
 
@@ -31,6 +32,7 @@
   "The entry-point for 'lein run-dev'"
   [& _]
   (println "\nCreating your [DEV] server...")
+  (s/set-fn-validation! true)
   (-> service/service
     (merge {:env                     :dev
             ;; do not block thread that starts web server

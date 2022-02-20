@@ -11,17 +11,17 @@
   {:name  s/Str
    :items {ID TODOListItem}})
 
-(s/defn ^:always-validate make-list :- TODOList
+(s/defn make-list :- TODOList
   [nm :- s/Str]
   {:name  nm
    :items {}})
 
-(s/defn ^:always-validate make-list-item :- TODOListItem
+(s/defn make-list-item :- TODOListItem
   [nm :- s/Str]
   {:name  nm
    :done? false})
 
-(s/defn ^:always-validate update-list-item :- TODOListItem
+(s/defn update-list-item :- TODOListItem
   [item :- TODOListItem
    done :- s/Bool]
   (let [current-done (:done? item)]
