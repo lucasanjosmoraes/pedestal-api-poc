@@ -1,12 +1,19 @@
-(ns lucasanjosmoraes.helpers)
+(ns lucasanjosmoraes.helpers
+  (:require [schema.core :as s]))
 
 (def truthy? #{"true"})
 
 (def falsy? #{"false"})
 
-(defn str-is-boolean
-  [str]
+(s/defn str-is-boolean? :- s/Bool
+  [str :- s/Str]
   (or (truthy? str) (falsy? str)))
+
+(def str-parseable-to-bool (s/constrained s/Str str-is-boolean?))
+
+(s/defn ^:always-validate str->bool :- s/Bool
+  [str :- str-parseable-to-bool]
+  (new Boolean str))
 
 (defn response [status body & {:as headers}]
   {:status status :body body :headers headers})

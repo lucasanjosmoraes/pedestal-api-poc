@@ -117,19 +117,14 @@
 
 ;; list-item-update
 
-;; TODO: create parse fn (named Str->Bool) to resolve done query-param
-
 (s/defn ^:always-validate list-item-update-enter :- Context
   [context :- Context]
-  (h/if-let* [list-id (get-in context [:request :path-params :list-id])
-              item-id (get-in context [:request :path-params :item-id])
-              item    (repository/find-list-item-by-ids (get-in context [:request :database]) list-id item-id)]
-    (let [done (get-in context [:request :query-params :done] false)]
-      (if (h/str-is-boolean done)
-        (let [updated-item (domain/update-list-item item (new Boolean done))]
-          (assoc context :tx-data [repository/list-item-add list-id item-id updated-item]))
-        ;; If we use list-item-view interceptor with this one, it will not respond 404 status due to the list-item-view behavior
-        context))
+  (h/if-let* [list-id      (get-in context [:request :path-params :list-id])
+              item-id      (get-in context [:request :path-params :item-id])
+              done         (h/str->bool (get-in context [:request :query-params :done]))
+              item         (repository/find-list-item-by-ids (get-in context [:request :database]) list-id item-id)
+              updated-item (domain/update-list-item item done)]
+    (assoc context :tx-data [repository/list-item-add list-id item-id updated-item])
     context))
 
 (def list-item-update
