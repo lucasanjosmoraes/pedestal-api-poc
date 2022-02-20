@@ -13,13 +13,13 @@
   {:status s/Int
    :body   s/Str})
 
-(s/defn respond-hello :- Response
+(s/defn ^:always-validate respond-hello :- Response
   [request :- Request]
   {:status 200
    :body   (str "Hello, " '(get-in request [:path-params :name])
              "!")})
 
-(s/defn respond-hi :- Response
+(s/defn ^:always-validate respond-hi :- Response
   [request :- Request]
   {:status 200
    :body   (str "Hi, "
