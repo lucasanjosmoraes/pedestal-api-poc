@@ -1,13 +1,11 @@
 (ns lucasanjosmoraes.helpers
   (:require [schema.core :as s]))
 
-(def truthy? #{"true"})
-
-(def falsy? #{"false"})
+(def truthy-or-falsy? #{"true" "false"})
 
 (s/defn str-is-boolean? :- s/Bool
   [str :- s/Str]
-  (or (truthy? str) (falsy? str)))
+  (contains? truthy-or-falsy? str))
 
 (def str-parseable-to-bool (s/constrained s/Str str-is-boolean?))
 
