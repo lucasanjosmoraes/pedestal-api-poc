@@ -1,21 +1,36 @@
-(ns lucasanjosmoraes.repository)
+(ns lucasanjosmoraes.repository
+  (:require [schema.core :as s]
+            [lucasanjosmoraes.interceptors.database :as database]
+            [lucasanjosmoraes.domain :as domain]))
 
-(defn find-list-by-id
-  [dbval db-id]
+(def NilableListItem (s/maybe domain/TODOListItem))
+(def NilableList (s/maybe domain/TODOList))
+
+(s/defn ^:always-validate find-list-by-id :- NilableList
+  [dbval :- database/Database
+   db-id :- domain/ID]
   (get dbval db-id))
 
-(defn find-list-item-by-ids
-  [dbval list-id item-id]
+(s/defn ^:always-validate find-list-item-by-ids :- NilableListItem
+  [dbval :- database/Database
+   list-id :- domain/ID
+   item-id :- domain/ID]
   (get-in dbval [list-id :items item-id] nil))
 
-(defn list-item-add
-  [dbval list-id item-id new-item]
+(s/defn ^:always-validate list-item-add :- database/Database
+  [dbval :- database/Database
+   list-id :- domain/ID
+   item-id :- domain/ID
+   new-item :- domain/TODOListItem]
   (if (contains? dbval list-id)
     (assoc-in dbval [list-id :items item-id] new-item)
     dbval))
 
-(defn delete-item
-  [dbval the-list list-id item-id]
+(s/defn ^:always-validate delete-item :- database/Database
+  [dbval :- database/Database
+   the-list :- domain/TODOList
+   list-id :- domain/ID
+   item-id :- domain/ID]
   (if (contains? (:items the-list) item-id)
     (update-in dbval [list-id :items] dissoc item-id)
     dbval))
