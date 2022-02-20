@@ -1,6 +1,7 @@
 (ns lucasanjosmoraes.interceptors.domain
   (:require [io.pedestal.http.route :as route]
             [lucasanjosmoraes.helpers :as h]
+            [lucasanjosmoraes.interceptors.database :as database]
             [lucasanjosmoraes.domain :as domain]
             [lucasanjosmoraes.repository :as repository]
             [schema.core :as s]))
@@ -20,7 +21,7 @@
 (def Request
   {(s/optional-key :path-params)  Path-Params
    (s/optional-key :query-params) Query-Params
-   ;; TODO: declare :database schema
+   (s/optional-key :database)     database/Database
    s/Any                          s/Any})
 
 (def Result-Headers
@@ -34,14 +35,12 @@
    :body                     s/Any
    (s/optional-key :headers) Headers})
 
-(def Tx-Data [(s/one (s/pred ifn? 'ifn?) 'ifn?) s/Any])
-
 (def Context
   {(s/optional-key :request)        Request
    (s/optional-key :result)         s/Any
    (s/optional-key :result-headers) Result-Headers
    (s/optional-key :response)       Response
-   (s/optional-key :tx-data)        Tx-Data
+   (s/optional-key :tx-data)        database/Tx-Data
    s/Any                            s/Any})
 
 ;; Entity render
