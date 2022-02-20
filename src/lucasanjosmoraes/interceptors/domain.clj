@@ -5,9 +5,23 @@
             [lucasanjosmoraes.repository :as repository]
             [schema.core :as s]))
 
-;; TODO: validate context request
-
 ;; Common schema
+
+(def Path-Params
+  {(s/optional-key :list-id) s/Str
+   (s/optional-key :item-id) s/Str
+   s/Any                     s/Any})
+
+(def Query-Params
+  {(s/optional-key :name) s/Str
+   (s/optional-key :done) h/str-parseable-to-bool
+   s/Any                  s/Any})
+
+(def Request
+  {(s/optional-key :path-params)  Path-Params
+   (s/optional-key :query-params) Query-Params
+   ;; TODO: declare :database schema
+   s/Any                          s/Any})
 
 (def Result-Headers
   (s/constrained [s/Str]
@@ -23,7 +37,8 @@
 (def Tx-Data [(s/one (s/pred ifn? 'ifn?) 'ifn?) s/Any])
 
 (def Context
-  {(s/optional-key :result)         s/Any
+  {(s/optional-key :request)        Request
+   (s/optional-key :result)         s/Any
    (s/optional-key :result-headers) Result-Headers
    (s/optional-key :response)       Response
    (s/optional-key :tx-data)        Tx-Data
