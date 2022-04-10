@@ -2,6 +2,22 @@
 
 POC of an HTTP API using [Pedestal](http://pedestal.io).
 
+## About the project
+
+- Useful dependencies
+  - [prismatic/schema](https://github.com/plumatic/schema): declarative data description and validation.
+- Basic profiles configuration;
+- Default logback configuration;
+- Default REPL configuration;
+- [Branch with example of schema specification using clojure.spec](https://github.com/lucasanjosmoraes/pedestal-api-poc/tree/feature/type-with-spec)
+  ;
+- Configuration for dev and prod environments;
+- Example of [Pedestal](http://pedestal.io) usage and its features with a basic CRUD;
+- Example of HTTP negotiation and response coercion, native on Pedestal;
+- Example of domain errors management;
+- Example of `if-let` with multiple bindings;
+- Missing `user` namespace configuration.
+
 ## Usage
 
 ### From command line
